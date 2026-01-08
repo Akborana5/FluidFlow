@@ -17,7 +17,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 3200;
+// Default to 7860 for Hugging Face deployment, fallback to SERVER_PORT or PORT env vars
+const PORT = process.env.PORT || process.env.SERVER_PORT || (process.env.NODE_ENV === 'production' ? 7860 : 3200);
 
 // Ensure projects directory exists
 const PROJECTS_DIR = path.join(__dirname, '../projects');
@@ -33,9 +34,12 @@ app.use(cors({
 
     // Allow localhost ports: 3100-3102 (FluidFlow), 5173 (Vite dev), 3300-3399 (running projects)
     // Support both HTTP and HTTPS
+    // Also allow Hugging Face Spaces domains
     const allowedPatterns = [
       /^https?:\/\/localhost:(3100|3101|3102|5173)$/,
       /^https?:\/\/localhost:33\d{2}$/, // 3300-3399
+      /^https?:\/\/.*\.hf\.space$/, // Hugging Face Spaces
+      /^https?:\/\/.*-[a-z0-9-]+\.hf\.space$/, // Hugging Face Spaces with custom subdomain
     ];
 
     const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
@@ -79,6 +83,17 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/runner', runnerRouter);
 app.use('/api/ai', aiRouter);
 
+// In production, serve static files from dist directory
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+  
+  // Serve index.html for all non-API routes (SPA support)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 // Error handling middleware (must be after all routes)
 app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[Server Error]', err);
@@ -99,14 +114,25 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
 });
 
-// Generate SSL certificates for HTTPS
-const sslCert = generateSelfSignedCert();
+// Create server based on environment
+const isProduction = process.env.NODE_ENV === 'production';
+let server;
 
-// Start HTTPS server
-const server = https.createServer(sslCert, app).listen(PORT, () => {
-  console.log(`\n🚀 FluidFlow Backend Server running on https://localhost:${PORT}`);
-  console.log(`   Projects directory: ${PROJECTS_DIR}\n`);
-});
+if (isProduction) {
+  // Use HTTP in production (Hugging Face handles HTTPS)
+  const http = await import('http');
+  server = http.default.createServer(app).listen(PORT, () => {
+    console.log(`\n🚀 FluidFlow Backend Server running on http://localhost:${PORT}`);
+    console.log(`   Projects directory: ${PROJECTS_DIR}\n`);
+  });
+} else {
+  // Use HTTPS in development
+  const sslCert = generateSelfSignedCert();
+  server = https.createServer(sslCert, app).listen(PORT, () => {
+    console.log(`\n🚀 FluidFlow Backend Server running on https://localhost:${PORT}`);
+    console.log(`   Projects directory: ${PROJECTS_DIR}\n`);
+  });
+}
 
 // Graceful shutdown handler
 let isShuttingDown = false;

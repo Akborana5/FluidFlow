@@ -9,6 +9,7 @@
     "dev:server": "nodemon",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "NODE_ENV=production npm run server",
     "server": "tsx server/index.ts",
     "server:watch": "tsx server/watchdog.ts",
     "test": "vitest",

@@ -8,7 +8,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import http from 'http';
 
-const SERVER_PORT = process.env.SERVER_PORT || 3200;
+const SERVER_PORT = process.env.PORT || process.env.SERVER_PORT || (process.env.NODE_ENV === 'production' ? 7860 : 3200);
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds
 const MAX_RESTART_ATTEMPTS = 5;
@@ -25,7 +25,8 @@ function log(message: string) {
 
 function checkHealth(): Promise<boolean> {
   return new Promise((resolve) => {
-    const req = http.get(`http://localhost:${SERVER_PORT}/api/health`, {
+    const protocol = process.env.NODE_ENV === 'production' ? 'http' : 'http';
+    const req = http.get(`${protocol}://localhost:${SERVER_PORT}/api/health`, {
       timeout: HEALTH_CHECK_TIMEOUT
     }, (res) => {
       resolve(res.statusCode === 200);
