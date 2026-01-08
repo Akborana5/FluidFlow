@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import https from 'https';
+import http from 'http';
 import { projectsRouter } from './api/projects.js';
 import { gitRouter } from './api/git.js';
 import { githubRouter } from './api/github.js';
@@ -120,8 +121,7 @@ let server;
 
 if (isProduction) {
   // Use HTTP in production (Hugging Face handles HTTPS)
-  const http = await import('http');
-  server = http.default.createServer(app).listen(PORT, () => {
+  server = http.createServer(app).listen(PORT, () => {
     console.log(`\n🚀 FluidFlow Backend Server running on http://localhost:${PORT}`);
     console.log(`   Projects directory: ${PROJECTS_DIR}\n`);
   });
