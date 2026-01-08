@@ -21,6 +21,12 @@ const app = express();
 // Default to 7860 for Hugging Face deployment, fallback to SERVER_PORT or PORT env vars
 const PORT = process.env.PORT || process.env.SERVER_PORT || (process.env.NODE_ENV === 'production' ? 7860 : 3200);
 
+// Configure trust proxy for production deployments (Hugging Face Spaces, etc.)
+// This allows express-rate-limit to correctly identify users behind proxies
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy
+}
+
 // Ensure projects directory exists
 const PROJECTS_DIR = path.join(__dirname, '../projects');
 if (!fs.existsSync(PROJECTS_DIR)) {
@@ -89,7 +95,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(distPath));
   
   // Serve index.html for all non-API routes (SPA support)
-  app.get('*', (req, res) => {
+  app.get('/*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
