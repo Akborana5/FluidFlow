@@ -37,8 +37,8 @@ COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/package.json ./package.json
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Create projects directory with proper permissions
-RUN mkdir -p /app/projects && chown nextjs:nodejs /app/projects
+# Create projects and settings directories with proper permissions
+RUN mkdir -p /app/projects /app/settings && chown nextjs:nodejs /app/projects /app/settings
 
 USER nextjs
 
