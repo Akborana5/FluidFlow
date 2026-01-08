@@ -7,8 +7,9 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import http from 'http';
+import https from 'https';
 
-const SERVER_PORT = process.env.SERVER_PORT || 3200;
+const SERVER_PORT = process.env.PORT || process.env.SERVER_PORT || (process.env.NODE_ENV === 'production' ? 7860 : 3200);
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds
 const MAX_RESTART_ATTEMPTS = 5;
@@ -25,17 +26,36 @@ function log(message: string) {
 
 function checkHealth(): Promise<boolean> {
   return new Promise((resolve) => {
-    const req = http.get(`http://localhost:${SERVER_PORT}/api/health`, {
-      timeout: HEALTH_CHECK_TIMEOUT
-    }, (res) => {
-      resolve(res.statusCode === 200);
-    });
-
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => {
-      req.destroy();
-      resolve(false);
-    });
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (isProduction) {
+      // Use HTTP in production
+      const req = http.get(`http://localhost:${SERVER_PORT}/api/health`, {
+        timeout: HEALTH_CHECK_TIMEOUT
+      }, (res) => {
+        resolve(res.statusCode === 200);
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(false);
+      });
+    } else {
+      // Use HTTPS in development (with self-signed cert support)
+      // Note: rejectUnauthorized is disabled only for localhost health checks in development
+      // This is safe as the watchdog only checks its own local server
+      const req = https.get(`https://localhost:${SERVER_PORT}/api/health`, {
+        timeout: HEALTH_CHECK_TIMEOUT,
+        rejectUnauthorized: false // Accept self-signed certificates for localhost
+      }, (res) => {
+        resolve(res.statusCode === 200);
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(false);
+      });
+    }
   });
 }
 

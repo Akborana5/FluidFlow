@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -41,12 +41,12 @@ RUN mkdir -p /app/projects && chown nextjs:nodejs /app/projects
 
 USER nextjs
 
-# Expose the port the app runs on
-EXPOSE 3200
+# Expose the port the app runs on (default 7860 for Hugging Face)
+EXPOSE 7860
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3200/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD node -e "const port = process.env.PORT || 7860; require('http').get('http://localhost:' + port + '/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Run the application
-CMD ["npm", "run", "server"]
+CMD ["npm", "start"]

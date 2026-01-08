@@ -149,6 +149,30 @@ VITE_API_URL=https://localhost:3200/api
 | `npm run dev:server` | Start only backend development server |
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
+| `npm start` | Start production server (port 7860 for Hugging Face, 3200 for local) |
+
+### Docker Deployment
+
+FluidFlow can be deployed using Docker, including on Hugging Face Spaces:
+
+```bash
+# Build the Docker image
+docker build -t fluidflow .
+
+# Run locally (development mode - port 3200)
+docker run -p 3200:3200 \
+  -e GEMINI_API_KEY=your_key_here \
+  fluidflow
+
+# Run in production mode (port 7860 for Hugging Face)
+docker run -p 7860:7860 \
+  -e NODE_ENV=production \
+  -e PORT=7860 \
+  -e GEMINI_API_KEY=your_key_here \
+  fluidflow
+```
+
+**Hugging Face Deployment**: See [HUGGINGFACE_DEPLOYMENT.md](HUGGINGFACE_DEPLOYMENT.md) for detailed instructions on deploying to Hugging Face Spaces.
 
 ### Code Quality
 
