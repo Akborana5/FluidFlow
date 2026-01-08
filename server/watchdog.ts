@@ -42,9 +42,11 @@ function checkHealth(): Promise<boolean> {
       });
     } else {
       // Use HTTPS in development (with self-signed cert support)
+      // Note: rejectUnauthorized is disabled only for localhost health checks in development
+      // This is safe as the watchdog only checks its own local server
       const req = https.get(`https://localhost:${SERVER_PORT}/api/health`, {
         timeout: HEALTH_CHECK_TIMEOUT,
-        rejectUnauthorized: false // Accept self-signed certificates
+        rejectUnauthorized: false // Accept self-signed certificates for localhost
       }, (res) => {
         resolve(res.statusCode === 200);
       });

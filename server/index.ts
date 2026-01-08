@@ -39,8 +39,7 @@ app.use(cors({
     const allowedPatterns = [
       /^https?:\/\/localhost:(3100|3101|3102|5173)$/,
       /^https?:\/\/localhost:33\d{2}$/, // 3300-3399
-      /^https?:\/\/.*\.hf\.space$/, // Hugging Face Spaces
-      /^https?:\/\/.*-[a-z0-9-]+\.hf\.space$/, // Hugging Face Spaces with custom subdomain
+      /^https?:\/\/.*\.hf\.space$/, // Hugging Face Spaces (includes subdomains)
     ];
 
     const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
